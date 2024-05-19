@@ -217,9 +217,9 @@ uint32_t InterruptManager::DoHandleInterrupt(uint8_t interrupt, uint32_t esp)
 int InterruptHandler::exitCurrentTask()
 {
     int a = interruptManager->taskManager->exitCurrentTask();
-    printf("exitCurrentTask: ");
-    printInt(a);
-    printf("\n");
+    // printf("exitCurrentTask: ");
+    // printInt(a);
+    // printf("\n");
     return a;
 }
 

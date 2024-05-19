@@ -279,6 +279,9 @@ void long_running_program(int n)
         }
     }
     printf("Result: ");
+    printInt(result);
+    printf("\n");
+    pause();
 }
 
 void collatz(int n)
@@ -298,6 +301,7 @@ void collatz(int n)
         printInt(n);
     }
     printf("\n");
+    pause();
 }
 
 void runCollatz(int n)
@@ -458,8 +462,8 @@ void initTask1()
         // printf(" pid = ");
         // printInt(sysGetPid());
         // printf(" ... ");
-        printf("Special Task is running\n");
-        pause();
+        // printf("Special Task is running\n");
+        // pause();
     }
 }
 

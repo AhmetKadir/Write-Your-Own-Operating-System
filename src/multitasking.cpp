@@ -140,7 +140,7 @@ CPUState* TaskManager::Schedule(CPUState* cpustate)
     
     tasks[currentTask].state = task::ProcessState::RUNNING;
 
-    if (counter > 1){
+    if (counter > 20){
         printProcessTable();
         counter = 0;
     }
@@ -309,10 +309,10 @@ int TaskManager::fork(CPUState* cpu) {
 
     numTasks++;
 
-    printProcessTable();
+    // printProcessTable();
     for(int i = 0; i < 1000000000; i++);
 
-    printf("Forked successfully. ");
+    // printf("Forked successfully. ");
     return tasks[numTasks - 1].pid; // Return the child's PID
 }
 
