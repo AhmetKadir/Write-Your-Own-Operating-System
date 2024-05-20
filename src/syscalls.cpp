@@ -19,13 +19,14 @@ void printInt(int);
 
 uint32_t SyscallHandler::HandleInterrupt(uint32_t esp)
 {
+    // printf("initial syscall h esp: "); printInt(esp); printf(", ");
     CPUState* cpu = (CPUState*)esp;
     
     switch(cpu->eax)
     {
         // exit syscall
         case 1:
-            InterruptHandler::exitCurrentTask();
+            esp = InterruptHandler::exitCurrentTask();
             break;
         // fork syscall
         case 2:
@@ -47,15 +48,17 @@ uint32_t SyscallHandler::HandleInterrupt(uint32_t esp)
             cpu->ecx = InterruptHandler::getPid();
             break;
         // call scheduler
-        case 21:
-            return InterruptHandler::Schedule(cpu);
+        // case 21:
+        //     return InterruptHandler::Schedule(cpu);
+        //     break;
+        case 22:
+            InterruptHandler::runChilds();
             break;
         default:
             printf("Unknown syscall\n");
-            return esp;
             break;
     }
-    
+    // printf("syscall h esp: "); printInt(esp); printf(", ");
     return esp;
 }
 

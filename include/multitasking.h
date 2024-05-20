@@ -63,9 +63,10 @@ namespace myos
         Task tasks[256];
         int numTasks;
         int currentTask;
+        GlobalDescriptorTable *gdt;
     public:
         // TaskManager();
-        TaskManager(GlobalDescriptorTable *gdt);
+        TaskManager(GlobalDescriptorTable *_gdt);
         ~TaskManager();
 
         bool AddTask(Task* task);
@@ -75,6 +76,7 @@ namespace myos
         int fork(CPUState* cpustate);
         int waitPid(int pid);
         void sleep();
+        void runChilds();
         int getCurrentTaskPid();
     };
 }

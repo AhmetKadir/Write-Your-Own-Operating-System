@@ -10,10 +10,6 @@ void printInt(int n);
 void printfHex(uint8_t);
 int t_counter = 0;
 
-
-
-
-
 InterruptHandler::InterruptHandler(InterruptManager* interruptManager, uint8_t InterruptNumber)
 {
     this->InterruptNumber = InterruptNumber;
@@ -29,7 +25,7 @@ InterruptHandler::~InterruptHandler()
 
 uint32_t InterruptHandler::HandleInterrupt(uint32_t esp)
 {
-    return esp;
+    return (uint32_t)interruptManager->taskManager->Schedule((CPUState*)esp);
 }
 
 InterruptManager::GateDescriptor InterruptManager::interruptDescriptorTable[256];
@@ -163,6 +159,7 @@ uint32_t InterruptManager::HandleInterrupt(uint8_t interrupt, uint32_t esp)
 {
     if(ActiveInterruptManager != 0)
         esp = ActiveInterruptManager->DoHandleInterrupt(interrupt, esp);
+    // printf("Handler interrupt returning: "); printInt(esp); printf(", ");
     return esp;
 }
 
@@ -170,6 +167,7 @@ uint32_t InterruptManager::DoHandleInterrupt(uint8_t interrupt, uint32_t esp)
 {
     if(handlers[interrupt] != 0)
     {
+        // printf("Handling interrupt: "); printfHex(interrupt); printf(", "); printf("esp: "); printInt(esp); printf("\n");
         esp = handlers[interrupt]->HandleInterrupt(esp);
     }
     else if(interrupt != hardwareInterruptOffset)
@@ -179,14 +177,15 @@ uint32_t InterruptManager::DoHandleInterrupt(uint8_t interrupt, uint32_t esp)
         // printf("\n");
         // printf("\nUNHANDLED INTERRUPT 0x");
         // printfHex(interrupt);
-        // esp = (uint32_t)taskManager->Schedule((CPUState*)esp);
+        esp = (uint32_t)taskManager->Schedule((CPUState*)esp);
     }
     
     if(interrupt == hardwareInterruptOffset)
     {
         // if the interrupt is a hardware interrupt, change the task, that means change the stack pointer
-        if (t_counter >= 0){
+        if (t_counter >= 50){
             esp = (uint32_t)taskManager->Schedule((CPUState*)esp);
+            printf("Scheduled esp: "); printInt(esp); printf("\n");
             t_counter = 0;
         }
         t_counter++;
@@ -243,6 +242,10 @@ int InterruptHandler::Schedule(CPUState* cpu)
     return (uint32_t)interruptManager->taskManager->Schedule(cpu);
 }
 
+void InterruptHandler::runChilds()
+{
+    interruptManager->taskManager->runChilds();
+}
 
 
 

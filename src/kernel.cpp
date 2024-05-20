@@ -187,6 +187,11 @@ void schedule()
 //     return *pid;
 // }
 
+void ready(){
+    asm("int $0x80" : : "a"(22));
+    printf("Ready is called\n");
+}
+
 int sysGetPid()
 {
     int pid;
@@ -197,6 +202,7 @@ int sysGetPid()
 int sysFork()
 {
     // printf("sysFork is called\n");
+    // int ret = sysGetPid();
     int ret;
     asm("int $0x80" : "=c"(ret) : "a"(2));
     // printf("sysFork returned: "); printInt(ret); printf("\n");
@@ -386,9 +392,9 @@ void initTask1()
 {
     int pid = sysFork();
 
-    // printf("Fork returned: ");
-    // printInt(pid);
-    // printf("\n");
+    printf("Fork returned: ");
+    printInt(pid);
+    printf(", ");
 
     if (pid == 0)
     {
@@ -456,14 +462,15 @@ void initTask1()
         printf("Fork failed\n");
         sysExit();
     }
+    ready();
 
     while (1)
     {
         // printf(" pid = ");
         // printInt(sysGetPid());
         // printf(" ... ");
-        // printf("Special Task is running\n");
-        // pause();
+        printf("Spec, ");
+        pause();
     }
 }
 
@@ -481,6 +488,8 @@ extern "C" void kernelMain(const void *multiboot_structure, uint32_t /*multiboot
     printf("Hello This is KadirOS!\n");
 
     GlobalDescriptorTable gdt;
+    TaskManager taskManager(&gdt);
+
 
     Task initTask(&gdt, initTask1);
     // Task task2(&gdt, initTask2);
@@ -488,13 +497,12 @@ extern "C" void kernelMain(const void *multiboot_structure, uint32_t /*multiboot
     // Task task3(&gdt, taskB);
     // Task task4(&gdt, taskC);
 
-    TaskManager taskManager(&gdt);
     taskManager.AddTask(&initTask);
     // taskManager.AddTask(&task2);
     // taskManager.AddTask(&task3);
     // taskManager.AddTask(&task4);
 
-    taskManager.printProcessTable();
+    // taskManager.printProcessTable();
 
     InterruptManager interrupts(0x20, &gdt, &taskManager);
     SyscallHandler syscalls(&interrupts, 0x80);

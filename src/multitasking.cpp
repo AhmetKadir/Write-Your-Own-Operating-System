@@ -63,14 +63,15 @@ Task::~Task()
 {
 }
 
-TaskManager::TaskManager(GlobalDescriptorTable *gdt)
+TaskManager::TaskManager(GlobalDescriptorTable *_gdt)
 {
     numTasks = 0;
     currentTask = -1;
-    // for(int i = 0; i < 256; i++)
-    // {
-    //     tasks[i].cpustate -> cs = gdt->CodeSegmentSelector();
-    // }
+    gdt = _gdt;
+    for(int i = 0; i < 256; i++)
+    {
+        tasks[i].cpustate -> cs = gdt->CodeSegmentSelector();
+    }
 }
 
 TaskManager::~TaskManager()
@@ -101,12 +102,7 @@ bool TaskManager::AddTask(Task* task){
     
     tasks[numTasks].cpustate -> eflags = task->cpustate->eflags;
 
-    // printf("creating pid: ");
-    // printInt(tasks[numTasks].getPid());
-    // printf("\n");
-
     numTasks++;
-
     return true;
 }
 
@@ -140,17 +136,19 @@ CPUState* TaskManager::Schedule(CPUState* cpustate)
     
     tasks[currentTask].state = task::ProcessState::RUNNING;
 
-    if (counter > 20){
+    if (counter > 1){
         printProcessTable();
+        for (int i = 0; i < 100000000; i++);
         counter = 0;
     }
     else {
         counter++;
     }
 
-    // printf("Scheduling pid: "); printInt(tasks[currentTask].pid); 
-    // printf(", esp: "); printInt((uint32_t)tasks[currentTask].cpustate); 
-    // printf(", eip: "); printInt(tasks[currentTask].cpustate->eip); printf("\n");
+
+    printf("Scheduling pid: "); printInt(tasks[currentTask].pid); 
+    printf(", esp: "); printInt((uint32_t)tasks[currentTask].cpustate); 
+    printf(", eip: "); printInt(tasks[currentTask].cpustate->eip); printf("\n");
     
     return tasks[currentTask].cpustate;
 }
@@ -187,6 +185,8 @@ void TaskManager::printProcessTable(){
         printInt((uint32_t)tasks[i].cpustate);
         printf(" eip: ");
         printInt(tasks[i].cpustate->eip);
+        printf(" Cpu state: ");
+        printInt((uint32_t)tasks[i].cpustate);
         printf("\n");
 
     }
@@ -228,14 +228,17 @@ int TaskManager::fork(CPUState* cpu) {
     
     tasks[currentTask].cpustate->ecx = tasks[numTasks].pid;
 
-    // Print base address of stacks
-    // printf("Parent stack: "); printInt((int32_t)tasks[currentTask].stack); printf("\n");
-    // printf("Child stack: "); printInt((int32_t)tasks[numTasks].stack); printf("\n");
+    // // Print base address of stacks
+    // printf("Parent stack: "); printInt((uint32_t)tasks[currentTask].stack); printf(", ");
+    // printf("Child stack: "); printInt((uint32_t)tasks[numTasks].stack); printf("\n");
 
-    // Print initial CPU states
-    // printf("Parent CPUState: "); printInt((int32_t)tasks[currentTask].cpustate); printf("\n");
-    // printf("Initial Child CPUState: "); printInt((int32_t)tasks[numTasks].cpustate); printf("\n");
-    // printf("CPU (cpu): "); printInt((uint32_t)cpu); printf("\n");
+    // // Print initial CPU states
+    // printf("Parent CPUState: "); printInt((int32_t)tasks[currentTask].cpustate); printf(", ");
+    // printf("Initial Child CPUState: "); printInt((int32_t)tasks[numTasks].cpustate); printf(", ");
+    // printf("CPU (cpu): "); printInt((uint32_t)cpu); printf(", ");
+    // printf("Parent eip: "); printInt(tasks[currentTask].cpustate->eip); printf(", ");
+    // printf("Initial child eip: "); printInt(tasks[numTasks].cpustate->eip); printf(", ");
+    // printf("Cpu eip: "); printInt(cpu->eip); printf("\n");
 
         // Copy stack from parent to child
     for (int i = 0; i < sizeof(tasks[currentTask].stack); i++) {
@@ -245,20 +248,18 @@ int TaskManager::fork(CPUState* cpu) {
     //Calculate the offset for the CPU state
     uint32_t stackOffset = (uint32_t)cpu - (uint32_t)tasks[currentTask].stack;
     tasks[numTasks].cpustate = (CPUState*)((uint32_t)tasks[numTasks].stack + stackOffset);
+    tasks[numTasks].cpustate->esp = (uint32_t)tasks[numTasks].stack + cpu->esp - (uint32_t)tasks[currentTask].stack;
     // tasks[currentTask].cpustate = (CPUState*)((uint32_t)tasks[currentTask].stack + stackOffset);
 
-    // printf("Calculated stack offset: "); printInt(stackOffset); printf("\n");
-
-    // Set the child's CPU state pointer
-
-    // Print updated CPU states
-    // printf("Updated Child CPUState: "); printInt((int32_t)tasks[numTasks].cpustate); printf("\n");
-
+    // printf("Calculated stack offset: "); printInt(stackOffset); printf(", ");
+    // printf("Updated Child CPUState: "); printInt((int32_t)tasks[numTasks].cpustate); printf(", ");
+    // printf("Updated Child eip: "); printInt(tasks[numTasks].cpustate->eip); printf("\n");
+    // tasks[numTasks].cpustate->esp = (common::uint32_t)tasks[numTasks].stack + (cpu->esp - (common::uint32_t)tasks[currentTask].stack);
 
     // Adjust the child's ESP to point to the correct location in the child's stack
     // tasks[numTasks].cpustate->esp = tasks[numTasks].stack + cpu->esp - tasks[currentTask].stack;
 
-    // // Print debug information
+    // Print debug information
     // printf("cpu: "); printInt((uint32_t)cpu); printf(", ");
     // printf("Parent CPUState at: ");
     // printInt((common::uint32_t)tasks[currentTask].cpustate);
@@ -266,27 +267,8 @@ int TaskManager::fork(CPUState* cpu) {
     // printInt((common::uint32_t)tasks[numTasks].cpustate);
     // printf("\n");
 
-    // tasks[numTasks].pid = numTasks;
-
-    // long for loop
-    // for (int i = 0; i < 1000000000; i++);
-
-    // Copy CPU state fields from parent to child
-    // tasks[numTasks].cpustate->eax = cpustate->eax;
-    // tasks[numTasks].cpustate->ebx = cpustate->ebx;
-    // tasks[numTasks].cpustate->ecx = 0; // Child process should return 0 from fork
-    // tasks[numTasks].cpustate->edx = cpustate->edx;
-    // tasks[numTasks].cpustate->esi = cpustate->esi;
-    // tasks[numTasks].cpustate->edi = cpustate->edi;
-    // tasks[numTasks].cpustate->ebp = cpustate->ebp;
-    // tasks[numTasks].cpustate->eip = cpustate->eip;
-    // tasks[numTasks].cpustate->cs = cpustate->cs;
-    // tasks[numTasks].cpustate->eflags = cpustate->eflags;
-
     tasks[numTasks].cpustate->ecx = 0;
-    // tasks[numTasks].pid = numTasks;
-    // tasks[currentTask].cpustate->eip = cpu->eip;
-    // tasks[numTasks].cpustate->eip = cpu->eip;
+    tasks[numTasks].state = task::ProcessState::BLOCKED;
 
     // printf("Parent CPUState:\n");
     // printf("EAX: "); printInt(cpustate->eax); printf(", ");
@@ -309,7 +291,7 @@ int TaskManager::fork(CPUState* cpu) {
 
     numTasks++;
 
-    // printProcessTable();
+    printProcessTable();
     for(int i = 0; i < 1000000000; i++);
 
     // printf("Forked successfully. ");
@@ -410,4 +392,13 @@ int TaskManager::getCurrentTaskPid(){
 
 void TaskManager::sleep(){
     for(int i = 0; i < 1000000000; i++);
+}
+
+void TaskManager::runChilds(){
+    printf("Childs are going to be ready\n");
+    for (int i = 0; i < numTasks; i++) {
+        if (tasks[i].ppid == tasks[currentTask].pid) {
+            tasks[i].state = task::ProcessState::READY;
+        }
+    }
 }

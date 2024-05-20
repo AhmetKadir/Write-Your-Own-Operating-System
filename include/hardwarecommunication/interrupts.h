@@ -29,6 +29,7 @@ namespace myos
             int waitPid(int pid);
             int getPid();
             int Schedule(CPUState *cpu);
+            void runChilds();
         };
 
         class InterruptManager
